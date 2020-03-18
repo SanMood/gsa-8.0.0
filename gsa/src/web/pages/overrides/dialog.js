@@ -1,0 +1,519 @@
+/* Copyright (C) 2017-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+import React from 'react';
+
+import _ from 'gmp/locale';
+import {longDate} from 'gmp/locale/date';
+
+import {isDefined} from 'gmp/utils/identity';
+
+import {parseFloat, parseYesNo, YES_VALUE, NO_VALUE} from 'gmp/parser';
+
+import {
+  ANY,
+  MANUAL,
+  ACTIVE_YES_ALWAYS_VALUE,
+  DEFAULT_DAYS,
+  DEFAULT_OID_VALUE,
+  RESULT_ANY,
+  TASK_ANY,
+  ACTIVE_YES_UNTIL_VALUE,
+  ACTIVE_YES_FOR_NEXT_VALUE,
+  ACTIVE_NO_VALUE,
+  TASK_SELECTED,
+  RESULT_UUID,
+} from 'gmp/models/override';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+import PropTypes from 'web/utils/proptypes';
+import {
+  renderNvtName,
+  renderSelectItems,
+  severityFormat,
+} from 'web/utils/render';
+import {
+  FALSE_POSITIVE_VALUE,
+  LOG_VALUE,
+  HIGH_VALUE,
+  MEDIUM_VALUE,
+  LOW_VALUE,
+  _FALSE_POSITIVE,
+  _LOG,
+  _LOW,
+  _MEDIUM,
+  _HIGH,
+  translatedResultSeverityRiskFactor,
+} from 'web/utils/severity';
+
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FormGroup from 'web/components/form/formgroup';
+import Radio from 'web/components/form/radio';
+import Spinner from 'web/components/form/spinner';
+import TextArea from 'web/components/form/textarea';
+import TextField from 'web/components/form/textfield';
+import Select from 'web/components/form/select';
+
+const OverrideDialog = ({
+  active = ACTIVE_YES_ALWAYS_VALUE,
+  custom_severity = NO_VALUE,
+  days = DEFAULT_DAYS,
+  fixed = false,
+  hosts = ANY,
+  hosts_manual = '',
+  id,
+  new_severity,
+  new_severity_from_list = FALSE_POSITIVE_VALUE,
+  nvt_name,
+  oid,
+  override,
+  port = ANY,
+  port_manual = '',
+  result_id = RESULT_ANY,
+  result_name,
+  result_uuid = '',
+  severity,
+  task_id = TASK_ANY,
+  task_name,
+  tasks,
+  task_uuid,
+  text = '',
+  title = _('新建复写'),
+  onClose,
+  onSave,
+}) => {
+  const is_edit = isDefined(override);
+
+  const data = {
+    active,
+    custom_severity,
+    days,
+    hosts,
+    hosts_manual,
+    new_severity,
+    new_severity_from_list,
+    oid: isDefined(oid) ? oid : DEFAULT_OID_VALUE,
+    override,
+    port,
+    port_manual,
+    result_id,
+    result_uuid,
+    severity: isDefined(severity) ? severity : '',
+    task_id,
+    task_name,
+    tasks,
+    task_uuid,
+    text,
+  };
+
+  let severity_from_list_items = [
+    {
+      value: HIGH_VALUE,
+      label: `${_HIGH}`,
+    },
+    {
+      value: MEDIUM_VALUE,
+      label: `${_MEDIUM}`,
+    },
+    {
+      value: LOW_VALUE,
+      label: `${_LOW}`,
+    },
+    {
+      value: LOG_VALUE,
+      label: `${_LOG}`,
+    },
+    {
+      value: FALSE_POSITIVE_VALUE,
+      label: `${_FALSE_POSITIVE}`,
+    },
+  ];
+
+  if (is_edit) {
+    severity_from_list_items = [
+      {
+        label: '--',
+        value: '',
+      },
+      ...severity_from_list_items,
+    ];
+  }
+  return (
+    <SaveDialog
+      title={title}
+      defaultValues={data}
+      values={{id}}
+      onClose={onClose}
+      onSave={onSave}
+    >
+      {({values: state, onValueChange}) => {
+        return (
+          <Layout flex="column">
+            {fixed && (
+              <FormGroup title={_('NVT')} flex="column">
+                <span>{renderNvtName(oid, nvt_name)}</span>
+              </FormGroup>
+            )}
+            {is_edit && !fixed && (
+              <FormGroup title={_('NVT')} flex="column">
+                <Radio
+                  name="oid"
+                  title={renderNvtName(oid, nvt_name)}
+                  checked={state.oid === oid}
+                  value={oid}
+                  onChange={onValueChange}
+                />
+                <Divider>
+                  <Radio
+                    name="oid"
+                    checked={state.oid !== oid}
+                    value={DEFAULT_OID_VALUE}
+                    onChange={onValueChange}
+                  />
+                  <TextField
+                    name="oid"
+                    disabled={state.oid === oid}
+                    value={state.oid === oid ? DEFAULT_OID_VALUE : state.oid}
+                    onChange={onValueChange}
+                  />
+                </Divider>
+              </FormGroup>
+            )}
+            {!is_edit && !fixed && (
+              <FormGroup title={_('NVT OID')}>
+                <TextField
+                  name="oid"
+                  value={state.oid}
+                  onChange={onValueChange}
+                />
+              </FormGroup>
+            )}
+
+            <FormGroup title={_('激活')} flex="column">
+              <Radio
+                name="active"
+                value={ACTIVE_YES_ALWAYS_VALUE}
+                checked={state.active === ACTIVE_YES_ALWAYS_VALUE}
+                title={_('是的，总是')}
+                onChange={onValueChange}
+              />
+              {is_edit && override.isActive() && isDefined(override.endTime) && (
+                <Layout>
+                  <Divider>
+                    <Radio
+                      name="active"
+                      value={ACTIVE_YES_UNTIL_VALUE}
+                      checked={state.active === ACTIVE_YES_UNTIL_VALUE}
+                      title={_('是的，直到')}
+                      onChange={onValueChange}
+                    />
+                    <span>{longDate(override.endTime)}</span>
+                  </Divider>
+                </Layout>
+              )}
+              <Divider>
+                <Radio
+                  name="active"
+                  checked={state.active === ACTIVE_YES_FOR_NEXT_VALUE}
+                  title={_('是的，下一个')}
+                  value={ACTIVE_YES_FOR_NEXT_VALUE}
+                  onChange={onValueChange}
+                />
+                <Spinner
+                  name="days"
+                  size="4"
+                  disabled={state.active !== ACTIVE_YES_FOR_NEXT_VALUE}
+                  type="int"
+                  min="1"
+                  value={state.days}
+                  onChange={onValueChange}
+                />
+                <span>{_('天')}</span>
+              </Divider>
+              <Radio
+                name="active"
+                checked={state.active === ACTIVE_NO_VALUE}
+                title={_('否')}
+                value={ACTIVE_NO_VALUE}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            <FormGroup title={_('主机')}>
+              <Radio
+                name="hosts"
+                title={_('任意')}
+                checked={state.hosts === ANY}
+                value={ANY}
+                onChange={onValueChange}
+              />
+              <Layout>
+                <Radio
+                  name="hosts"
+                  title={fixed ? state.hosts_manual : ''}
+                  checked={state.hosts === MANUAL}
+                  value={MANUAL}
+                  onChange={onValueChange}
+                />
+                {!fixed && (
+                  <TextField
+                    name="hosts_manual"
+                    value={state.hosts_manual}
+                    disabled={state.hosts !== MANUAL}
+                    onChange={onValueChange}
+                  />
+                )}
+              </Layout>
+            </FormGroup>
+
+            <FormGroup title={_('本地')}>
+              <Radio
+                name="port"
+                title={_('任意')}
+                checked={state.port === ANY}
+                value={ANY}
+                onChange={onValueChange}
+              />
+              <Layout>
+                <Radio
+                  name="port"
+                  title={fixed ? state.port_manual : ''}
+                  checked={state.port === MANUAL}
+                  value={MANUAL}
+                  onChange={onValueChange}
+                />
+                {!fixed && (
+                  <TextField
+                    name="port_manual"
+                    disabled={state.port !== MANUAL}
+                    value={state.port_manual}
+                    onChange={onValueChange}
+                  />
+                )}
+              </Layout>
+            </FormGroup>
+
+            <FormGroup title={_('严重程度')}>
+              <Radio
+                name="severity"
+                title={_('任意')}
+                checked={state.severity === ''}
+                value=""
+                onChange={onValueChange}
+              />
+              {isDefined(severity) && (
+                <Layout>
+                  {severity > 0 ? (
+                    <Radio
+                      name="severity"
+                      title={' > ' + severityFormat(severity - 0.1)}
+                      checked={true}
+                      convert={parseFloat}
+                      value={severity}
+                      onChange={onValueChange}
+                    />
+                  ) : (
+                    <Radio
+                      name="severity"
+                      title={translatedResultSeverityRiskFactor(severity)}
+                      checked={state.severity === severity}
+                      convert={parseFloat}
+                      value={severity}
+                      onChange={onValueChange}
+                    />
+                  )}
+                </Layout>
+              )}
+              {!isDefined(severity) && (
+                <Layout>
+                  <Radio
+                    name="severity"
+                    title={_('> 0.0')}
+                    checked={state.severity === 0.1}
+                    convert={parseFloat}
+                    value="0.1"
+                    onChange={onValueChange}
+                  />
+                  <Radio
+                    name="severity"
+                    value="0.0"
+                    title={_('日志')}
+                    checked={state.severity === 0.0}
+                    convert={parseFloat}
+                    onChange={onValueChange}
+                  />
+                </Layout>
+              )}
+            </FormGroup>
+
+            <FormGroup title={_('新建严重程度')}>
+              <Divider>
+                <Radio
+                  name="custom_severity"
+                  checked={state.custom_severity === NO_VALUE}
+                  convert={parseYesNo}
+                  value={NO_VALUE}
+                  onChange={onValueChange}
+                />
+                <Select
+                  name="new_severity_from_list"
+                  disabled={state.custom_severity === YES_VALUE}
+                  convert={parseFloat}
+                  items={severity_from_list_items}
+                  value={state.new_severity_from_list}
+                  onChange={onValueChange}
+                />
+                <Radio
+                  name="custom_severity"
+                  title={_('其他')}
+                  checked={state.custom_severity === YES_VALUE}
+                  convert={parseYesNo}
+                  value={YES_VALUE}
+                  onChange={onValueChange}
+                />
+                <TextField
+                  name="new_severity"
+                  disabled={state.custom_severity === NO_VALUE}
+                  convert={parseFloat}
+                  value={state.new_severity}
+                  onChange={onValueChange}
+                />
+              </Divider>
+            </FormGroup>
+
+            <FormGroup title={_('任务')}>
+              <Radio
+                name="task_id"
+                title={_('任意')}
+                checked={state.task_id === TASK_ANY}
+                value={TASK_ANY}
+                onChange={onValueChange}
+              />
+              <Layout>
+                <Radio
+                  name="task_id"
+                  title={fixed ? state.task_name : ''}
+                  checked={state.task_id === TASK_SELECTED}
+                  value={TASK_SELECTED}
+                  onChange={onValueChange}
+                />
+                {!fixed && (
+                  <Select
+                    name="task_uuid"
+                    disabled={state.task_id !== TASK_SELECTED}
+                    items={renderSelectItems(tasks)}
+                    value={state.task_uuid}
+                    onChange={onValueChange}
+                  />
+                )}
+              </Layout>
+            </FormGroup>
+
+            <FormGroup title={_('结果')}>
+              <Radio
+                name="result_id"
+                title={_('任意')}
+                checked={state.result_id === RESULT_ANY}
+                value={RESULT_ANY}
+                onChange={onValueChange}
+              />
+              <Divider>
+                <Radio
+                  name="result_id"
+                  title={
+                    isDefined(result_name)
+                      ? _('仅选定结果 ({{- name}})', {
+                          name: result_name,
+                        })
+                      : _('UUID')
+                  }
+                  checked={state.result_id === RESULT_UUID}
+                  value={RESULT_UUID}
+                  onChange={onValueChange}
+                />
+                {(result_id === RESULT_ANY || result_id === RESULT_UUID) &&
+                  !fixed && (
+                    <TextField
+                      name="result_uuid"
+                      size="34"
+                      disabled={state.result_id !== RESULT_UUID}
+                      value={state.result_uuid}
+                      onChange={onValueChange}
+                    />
+                  )}
+              </Divider>
+            </FormGroup>
+
+            <FormGroup title={_('文本')}>
+              <TextArea
+                name="text"
+                grow="1"
+                rows="10"
+                cols="60"
+                value={state.text}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+          </Layout>
+        );
+      }}
+    </SaveDialog>
+  );
+};
+
+OverrideDialog.propTypes = {
+  active: PropTypes.oneOf([
+    ACTIVE_NO_VALUE,
+    ACTIVE_YES_FOR_NEXT_VALUE,
+    ACTIVE_YES_ALWAYS_VALUE,
+    ACTIVE_YES_UNTIL_VALUE,
+  ]),
+  custom_severity: PropTypes.yesno,
+  days: PropTypes.number,
+  fixed: PropTypes.bool,
+  hosts: PropTypes.string,
+  hosts_manual: PropTypes.string,
+  id: PropTypes.string,
+  new_severity: PropTypes.number,
+  new_severity_from_list: PropTypes.number,
+  nvt_name: PropTypes.string,
+  oid: PropTypes.string,
+  override: PropTypes.model,
+  port: PropTypes.string,
+  port_manual: PropTypes.string,
+  result_id: PropTypes.id,
+  result_name: PropTypes.string,
+  result_uuid: PropTypes.id,
+  severity: PropTypes.number,
+  task_id: PropTypes.id,
+  task_name: PropTypes.string,
+  task_uuid: PropTypes.id,
+  tasks: PropTypes.array,
+  text: PropTypes.string,
+  title: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
+export default OverrideDialog;
+
+// vim: set ts=2 sw=2 tw=80:

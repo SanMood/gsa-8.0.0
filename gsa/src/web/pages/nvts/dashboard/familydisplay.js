@@ -1,0 +1,179 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+import React from 'react';
+
+import {_, _l} from 'gmp/locale/lang';
+
+import Filter, {NVTS_FILTER_FILTER} from 'gmp/models/filter';
+import FilterTerm from 'gmp/models/filter/filterterm';
+
+import {parseFloat, parseSeverity} from 'gmp/parser';
+
+import {isDefined} from 'gmp/utils/identity';
+import {isEmpty} from 'gmp/utils/string';
+import PropTypes from 'web/utils/proptypes';
+import {severityFormat} from 'web/utils/render';
+import {resultSeverityRiskFactor} from 'web/utils/severity';
+
+import BubbleChart from 'web/components/chart/bubble';
+
+import DataDisplay from 'web/components/dashboard/display/datadisplay';
+import DataTableDisplay from 'web/components/dashboard/display/datatabledisplay'; // eslint-disable-line max-len
+import DataTable from 'web/components/dashboard/display/datatable';
+import createDisplay from 'web/components/dashboard/display/createDisplay';
+import {riskFactorColorScale} from 'web/components/dashboard/display/utils';
+import withFilterSelection from 'web/components/dashboard/display/withFilterSelection'; // eslint-disable-line max-len
+import {registerDisplay} from 'web/components/dashboard/registry';
+
+import {NvtsFamilyLoader} from './loaders';
+
+const transformFamilyData = (data = {}, {severityClass}) => {
+  const {groups = []} = data;
+  const totalNvts = groups.reduce(
+    (prev, current) => prev + parseFloat(current.count),
+    0,
+  );
+
+  const tdata = groups.map(family => {
+    const {count, value} = family;
+    const severity = parseSeverity(family.stats.severity.mean);
+    const riskFactor = resultSeverityRiskFactor(severity, severityClass);
+    const formattedSeverity = severityFormat(severity);
+    const toolTip = _('{{value}}：{{count}}（严重程度：{{severity}}）', {
+      value: value,
+      count: count,
+      severity: formattedSeverity,
+    });
+
+    return {
+      value: parseFloat(count),
+      color: riskFactorColorScale(riskFactor),
+      label: value,
+      toolTip,
+      severity: formattedSeverity,
+      filterValue: value,
+    };
+  });
+
+  tdata.total = totalNvts;
+  return tdata;
+};
+
+export class NvtsFamilyDisplay extends React.Component {
+  constructor(...args) {
+    super(...args);
+
+    this.handleDataClick = this.handleDataClick.bind(this);
+  }
+
+  handleDataClick(data) {
+    const {onFilterChanged, filter} = this.props;
+
+    if (!isDefined(onFilterChanged)) {
+      return;
+    }
+
+    const {filterValue = ''} = data;
+
+    let familyFilter;
+
+    if (!isEmpty(filterValue)) {
+      const familyTerm = FilterTerm.fromString(`family="${filterValue}"`);
+
+      if (isDefined(filter) && filter.hasTerm(familyTerm)) {
+        return;
+      }
+      familyFilter = Filter.fromTerm(familyTerm);
+    }
+
+    const newFilter = isDefined(filter)
+      ? filter.copy().and(familyFilter)
+      : familyFilter;
+
+    onFilterChanged(newFilter);
+  }
+
+  render() {
+    const {filter, onFilterChanged, ...props} = this.props;
+
+    return (
+      <NvtsFamilyLoader filter={filter}>
+        {loaderProps => (
+          <DataDisplay
+            {...props}
+            {...loaderProps}
+            dataTransform={transformFamilyData}
+            title={({data: tdata}) =>
+              _('按家族列出NVT（总计： (Total: {{count}}）', {count: tdata.total})
+            }
+            showToggleLegend={false}
+          >
+            {({width, height, data: tdata, svgRef}) => (
+              <BubbleChart
+                svgRef={svgRef}
+                data={tdata}
+                height={height}
+                width={width}
+                onDataClick={
+                  isDefined(onFilterChanged) ? this.handleDataClick : undefined
+                }
+              />
+            )}
+          </DataDisplay>
+        )}
+      </NvtsFamilyLoader>
+    );
+  }
+}
+
+NvtsFamilyDisplay.propTypes = {
+  filter: PropTypes.filter,
+  onFilterChanged: PropTypes.func,
+};
+
+NvtsFamilyDisplay = withFilterSelection({
+  filtersFilter: NVTS_FILTER_FILTER,
+})(NvtsFamilyDisplay);
+
+NvtsFamilyDisplay.displayId = 'nvt-by-family';
+
+export const NvtsFamilyTableDisplay = createDisplay({
+  loaderComponent: NvtsFamilyLoader,
+  displayComponent: DataTableDisplay,
+  chartComponent: DataTable,
+  dataTitles: [_l('NVT家族'), _l('# of NVTs'), _l('严重程度')],
+  dataRow: row => [row.label, row.value, row.severity],
+  dataTransform: transformFamilyData,
+  title: ({data}) =>
+    _('按家族列出NVT（总计： (Total: {{count}}）', {count: data.total}),
+  displayId: 'nvt-by-family-table',
+  displayName: 'NvtsFamilyTableDisplay',
+  filtersFilter: NVTS_FILTER_FILTER,
+});
+
+registerDisplay(NvtsFamilyDisplay.displayId, NvtsFamilyDisplay, {
+  title: _l('图表：按家族列出NVT'),
+});
+
+registerDisplay(NvtsFamilyTableDisplay.displayId, NvtsFamilyTableDisplay, {
+  title: _l('表格：按家族列出NVT'),
+});
+
+// vim: set ts=2 sw=2 tw=80:

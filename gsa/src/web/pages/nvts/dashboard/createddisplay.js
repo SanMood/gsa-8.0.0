@@ -1,0 +1,74 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import {_, _l} from 'gmp/locale/lang';
+
+import {NVTS_FILTER_FILTER} from 'gmp/models/filter';
+
+import Theme from 'web/utils/theme';
+
+import DataTableDisplay from 'web/components/dashboard/display/datatabledisplay'; // eslint-disable-line max-len
+import transformCreated from 'web/components/dashboard/display/created/createdtransform'; // eslint-disable-line max-len
+import CreatedDisplay from 'web/components/dashboard/display/created/createddisplay'; // eslint-disable-line max-len
+import createDisplay from 'web/components/dashboard/display/createDisplay';
+import {registerDisplay} from 'web/components/dashboard/registry';
+
+import {NvtCreatedLoader} from './loaders';
+
+export const NvtsCreatedDisplay = createDisplay({
+  loaderComponent: NvtCreatedLoader,
+  displayComponent: CreatedDisplay,
+  title: () => _('按创建时间列出NVT'),
+  yAxisLabel: _l('# of created NVTs'),
+  y2AxisLabel: _l('所有NVT'),
+  xAxisLabel: _l('时间'),
+  yLine: {
+    color: Theme.darkGreenTransparent,
+    label: _l('已创建的NVT'),
+  },
+  y2Line: {
+    color: Theme.darkGreenTransparent,
+    dashArray: '3, 2',
+    label: _l('所有NVT'),
+  },
+  displayId: 'nvt-by-created',
+  displayName: 'NvtCreatedDisplay',
+  filtersFilter: NVTS_FILTER_FILTER,
+});
+
+export const NvtsCreatedTableDisplay = createDisplay({
+  loaderComponent: NvtCreatedLoader,
+  displayComponent: DataTableDisplay,
+  title: () => _('按创建时间列出NVT'),
+  dataTitles: [_l('创建时间'), _l('# of NVTs'), _l('所有NVT')],
+  dataRow: row => [row.label, row.y, row.y2],
+  dataTransform: transformCreated,
+  displayId: 'nvt-by-created-table',
+  displayName: 'nvtCreatedTableDisplay',
+  filtersFilter: NVTS_FILTER_FILTER,
+});
+
+registerDisplay(NvtsCreatedDisplay.displayId, NvtsCreatedDisplay, {
+  title: _l('图表：按创建时间列出NVT'),
+});
+
+registerDisplay(NvtsCreatedTableDisplay.displayId, NvtsCreatedTableDisplay, {
+  title: _l('表格：按创建时间列出NVT'),
+});
+
+// vim: set ts=2 sw=2 tw=80:
