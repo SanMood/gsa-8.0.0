@@ -1,0 +1,90 @@
+/* Copyright (C) 2016-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import {
+  EVENT_TYPE_TASK_RUN_STATUS_CHANGED,
+  isTaskEvent,
+} from 'gmp/models/alert';
+
+import Radio from 'web/components/form/radio';
+import Select from 'web/components/form/select';
+
+import Divider from 'web/components/layout/divider';
+
+import PropTypes from 'web/utils/proptypes.js';
+import withPrefix from 'web/utils/withPrefix';
+
+const TaskEventPart = ({prefix, event, status, onChange, onEventChange}) => (
+  <Divider>
+    <Radio
+      title={_('任务运行状态更改为')}
+      name="event"
+      value={EVENT_TYPE_TASK_RUN_STATUS_CHANGED}
+      checked={isTaskEvent(event)}
+      onChange={onEventChange}
+    />
+    <Select
+      disabled={!isTaskEvent(event)}
+      items={[
+        {
+          value: 'Done',
+          label: _('已完成'),
+        },
+        {
+          value: 'New',
+          label: _('新建'),
+        },
+        {
+          value: 'Requested',
+          label: _('请求中'),
+        },
+        {
+          value: 'Running',
+          label: _('运行中'),
+        },
+        {
+          value: 'Stop Requested',
+          label: _('停止请求'),
+        },
+        {
+          value: 'Stopped',
+          label: _('已停止'),
+        },
+      ]}
+      name={prefix + 'status'}
+      value={status}
+      onChange={onChange}
+    />
+  </Divider>
+);
+
+TaskEventPart.propTypes = {
+  event: PropTypes.string.isRequired,
+  prefix: PropTypes.string,
+  status: PropTypes.string.isRequired,
+  onChange: PropTypes.func,
+  onEventChange: PropTypes.func,
+};
+
+export default withPrefix(TaskEventPart);
+
+// vim: set ts=2 sw=2 tw=80:
