@@ -1,0 +1,76 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import {_l} from 'gmp/locale/lang';
+
+import PropTyes from 'web/utils/proptypes';
+
+import Select from 'web/components/form/select';
+
+const DAY_SELECT_ITEMS = [
+  {
+    label: _l('星期一'),
+    value: 'monday',
+  },
+  {
+    label: _l('星期二'),
+    value: 'tuesday',
+  },
+  {
+    label: _l('星期三'),
+    value: 'wednesday',
+  },
+  {
+    label: _l('星期四'),
+    value: 'thursday',
+  },
+  {
+    label: _l('星期五'),
+    value: 'friday',
+  },
+  {
+    label: _l('星期六'),
+    value: 'saturday',
+  },
+  {
+    label: _l('星期日'),
+    value: 'sunday',
+  },
+];
+
+const DaySelect = ({value, ...props}) => (
+  <Select {...props} value={value} items={DAY_SELECT_ITEMS} />
+);
+
+DaySelect.propTypes = {
+  value: PropTyes.oneOf([
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ]),
+};
+
+export default DaySelect;
+
+// vim: set ts=2 sw=2 tw=80:
