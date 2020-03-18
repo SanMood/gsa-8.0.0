@@ -1,0 +1,406 @@
+/* Copyright (C) 2017-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import {isDefined} from 'gmp/utils/identity';
+import {map} from 'gmp/utils/array';
+
+import {
+  ACCESS_ALLOW_ALL,
+  ACCESS_DENY_ALL,
+  AUTH_METHOD_LDAP,
+  AUTH_METHOD_NEW_PASSWORD,
+  AUTH_METHOD_PASSWORD,
+  AUTH_METHOD_RADIUS,
+} from 'gmp/models/user';
+
+import PropTypes from 'web/utils/proptypes';
+import withCapabilities from 'web/utils/withCapabilities';
+
+import ConfirmationDialog from 'web/components/dialog/confirmationdialog';
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FormGroup from 'web/components/form/formgroup';
+import PasswordField from 'web/components/form/passwordfield';
+import Radio from 'web/components/form/radio';
+import MultiSelect from 'web/components/form/multiselect';
+import TextField from 'web/components/form/textfield';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+class Dialog extends React.Component {
+  constructor(...args) {
+    super(...args);
+
+    const {roleIds = []} = this.props;
+
+    this.state = {
+      confirmationDialogVisible: false,
+      noRoleConfirmed: false,
+      roleIds,
+    };
+
+    this.closeConfirmationDialog = this.closeConfirmationDialog.bind(this);
+    this.handleResumeClick = this.handleResumeClick.bind(this);
+    this.handleRoleIdsChange = this.handleRoleIdsChange.bind(this);
+    this.handleSaveClick = this.handleSaveClick.bind(this);
+  }
+
+  closeConfirmationDialog() {
+    this.setState({confirmationDialogVisible: false});
+  }
+
+  handleResumeClick() {
+    this.setState({noRoleConfirmed: true});
+    this.closeConfirmationDialog();
+  }
+
+  handleRoleIdsChange(value) {
+    this.setState({
+      noRoleConfirmed: false,
+      roleIds: value,
+    });
+  }
+
+  handleSaveClick(onSave, d) {
+    const {roleIds, noRoleConfirmed} = this.state;
+    if (roleIds.length > 0 || noRoleConfirmed) {
+      return onSave(d);
+    }
+    this.setState({confirmationDialogVisible: true});
+  }
+
+  render() {
+    const {
+      accessHosts = '',
+      accessIfaces = '',
+      authMethod = AUTH_METHOD_PASSWORD,
+      capabilities,
+      comment = '',
+      groups,
+      groupIds = [],
+      hostsAllow = ACCESS_ALLOW_ALL,
+      ifacesAllow = ACCESS_ALLOW_ALL,
+      name = _('未命名'),
+      oldName,
+      password = '',
+      roles,
+      settings,
+      title = _('新建用户'),
+      user,
+      onClose,
+      onSave,
+    } = this.props;
+
+    const {confirmationDialogVisible, roleIds} = this.state;
+
+    const data = {
+      ...user,
+      access_hosts: accessHosts,
+      access_ifaces: accessIfaces,
+      auth_method: authMethod,
+      comment,
+      group_ids: groupIds,
+      groups,
+      hosts_allow: hostsAllow,
+      ifaces_allow: ifacesAllow,
+      name,
+      old_name: oldName,
+      password,
+      roles,
+    };
+
+    const controlledValues = {
+      role_ids: roleIds,
+    };
+
+    const is_edit = isDefined(user);
+
+    const rolesOptions = map(roles, role => ({
+      label: role.name,
+      value: role.id,
+    }));
+
+    const groupsOptions = map(groups, group => ({
+      label: group.name,
+      value: group.id,
+    }));
+
+    return (
+      <React.Fragment>
+        <SaveDialog
+          title={title}
+          values={controlledValues}
+          onClose={onClose}
+          onSave={d => this.handleSaveClick(onSave, d)}
+          defaultValues={data}
+        >
+          {({values: state, onValueChange}) => {
+            return (
+              <React.Fragment>
+                <Layout flex="column">
+                  <FormGroup title={_('登录名')}>
+                    <TextField
+                      name="name"
+                      grow="1"
+                      value={state.name}
+                      size="30"
+                      onChange={onValueChange}
+                    />
+                  </FormGroup>
+
+                  <FormGroup title={_('备注')}>
+                    <TextField
+                      name="comment"
+                      value={state.comment}
+                      grow="1"
+                      size="30"
+                      onChange={onValueChange}
+                    />
+                  </FormGroup>
+
+                  {!is_edit && (
+                    <FormGroup title={_('认证方式')} flex="column">
+                      <Divider>
+                        <Radio
+                          title={_('密码')}
+                          name="auth_method"
+                          value={AUTH_METHOD_PASSWORD}
+                          checked={state.auth_method === AUTH_METHOD_PASSWORD}
+                          onChange={onValueChange}
+                        />
+                        <PasswordField
+                          name="password"
+                          value={state.password}
+                          onChange={onValueChange}
+                        />
+                      </Divider>
+                      {settings.get('method:ldap_connect').enable ===
+                        'true' && (
+                        <Divider>
+                          <Radio
+                            title={_('仅限LDAP身份验证')}
+                            name="auth_method"
+                            value={AUTH_METHOD_LDAP}
+                            checked={state.auth_method === AUTH_METHOD_LDAP}
+                            onChange={onValueChange}
+                          />
+                        </Divider>
+                      )}
+                      {settings.get('method:radius_connect').enable ===
+                        'true' && (
+                        <Divider>
+                          <Radio
+                            title={_('仅限RADIUS身份验证')}
+                            name="auth_method"
+                            value={AUTH_METHOD_RADIUS}
+                            checked={state.auth_method === AUTH_METHOD_RADIUS}
+                            onChange={onValueChange}
+                          />
+                        </Divider>
+                      )}
+                    </FormGroup>
+                  )}
+
+                  {is_edit && (
+                    <FormGroup title={_('认证方式')} flex="column">
+                      <Divider>
+                        <Radio
+                          title={_('密码：使用现有密码')}
+                          name="auth_method"
+                          value={AUTH_METHOD_PASSWORD}
+                          checked={state.auth_method === AUTH_METHOD_PASSWORD}
+                          onChange={onValueChange}
+                        />
+                      </Divider>
+                      <Divider>
+                        <Radio
+                          title={_('新建密码')}
+                          name="auth_method"
+                          value={AUTH_METHOD_NEW_PASSWORD}
+                          checked={
+                            state.auth_method === AUTH_METHOD_NEW_PASSWORD
+                          }
+                          onChange={onValueChange}
+                        />
+                        <PasswordField
+                          name="password"
+                          value={state.password}
+                          onChange={onValueChange}
+                        />
+                      </Divider>
+                      {settings.get('method:ldap_connect').enable ===
+                        'true' && (
+                        <Divider>
+                          <Radio
+                            title={_('仅限LDAP身份验证')}
+                            name="auth_method"
+                            value={AUTH_METHOD_LDAP}
+                            checked={state.auth_method === AUTH_METHOD_LDAP}
+                            onChange={onValueChange}
+                          />
+                        </Divider>
+                      )}
+                      {settings.get('method:radius_connect').enable ===
+                        'true' && (
+                        <Divider>
+                          <Radio
+                            title={_('仅限RADIUS身份验证')}
+                            name="auth_method"
+                            value={AUTH_METHOD_RADIUS}
+                            checked={state.auth_method === AUTH_METHOD_RADIUS}
+                            onChange={onValueChange}
+                          />
+                        </Divider>
+                      )}
+                    </FormGroup>
+                  )}
+
+                  {capabilities.mayAccess('roles') && (
+                    <FormGroup title={_('角色')}>
+                      <MultiSelect
+                        name="role_ids"
+                        items={rolesOptions}
+                        value={roleIds}
+                        onChange={this.handleRoleIdsChange}
+                      />
+                    </FormGroup>
+                  )}
+
+                  {capabilities.mayAccess('groups') && (
+                    <FormGroup title={_('组')}>
+                      <MultiSelect
+                        name="group_ids"
+                        items={groupsOptions}
+                        value={state.group_ids}
+                        onChange={onValueChange}
+                      />
+                    </FormGroup>
+                  )}
+
+                  <FormGroup title={_('主机访问')}>
+                    <Divider flex="column">
+                      <Divider>
+                        <Radio
+                          name="hosts_allow"
+                          title={_('允许所有，拒绝')}
+                          value={ACCESS_ALLOW_ALL}
+                          checked={state.hosts_allow === ACCESS_ALLOW_ALL}
+                          onChange={onValueChange}
+                        />
+                        <Radio
+                          name="hosts_allow"
+                          title={_('拒绝所有，允许')}
+                          value={ACCESS_DENY_ALL}
+                          checked={state.hosts_allow === ACCESS_DENY_ALL}
+                          onChange={onValueChange}
+                        />
+                      </Divider>
+                      <TextField
+                        name="access_hosts"
+                        size="30"
+                        value={state.access_hosts}
+                        onChange={onValueChange}
+                      />
+                    </Divider>
+                  </FormGroup>
+
+                  <FormGroup title={_('接口访问')}>
+                    <Divider flex="column">
+                      <Divider>
+                        <Radio
+                          name="ifaces_allow"
+                          title={_('允许所有，拒绝')}
+                          value={ACCESS_ALLOW_ALL}
+                          checked={state.ifaces_allow === ACCESS_ALLOW_ALL}
+                          onChange={onValueChange}
+                        />
+                        <Radio
+                          name="ifaces_allow"
+                          title={_('拒绝所有，允许')}
+                          value={ACCESS_DENY_ALL}
+                          checked={state.ifaces_allow === ACCESS_DENY_ALL}
+                          onChange={onValueChange}
+                        />
+                      </Divider>
+                      <TextField
+                        name="access_ifaces"
+                        size="30"
+                        value={state.access_ifaces}
+                        onChange={onValueChange}
+                      />
+                    </Divider>
+                  </FormGroup>
+                </Layout>
+                {confirmationDialogVisible && (
+                  <ConfirmationDialog
+                    text={_(
+                      '请注意：您将创建一个没有角色的用户。该用户将没有任何权限' +
+                        '因此将无法登录。',
+                    )}
+                    title={_('没有角色的用户')}
+                    width="400px"
+                    onClose={this.closeConfirmationDialog}
+                    onResumeClick={this.handleResumeClick}
+                  />
+                )}
+              </React.Fragment>
+            );
+          }}
+        </SaveDialog>
+      </React.Fragment>
+    );
+  }
+}
+
+Dialog.propTypes = {
+  accessHosts: PropTypes.string,
+  accessIfaces: PropTypes.string,
+  authMethod: PropTypes.oneOf([
+    AUTH_METHOD_LDAP,
+    AUTH_METHOD_NEW_PASSWORD,
+    AUTH_METHOD_PASSWORD,
+    AUTH_METHOD_RADIUS,
+  ]),
+  capabilities: PropTypes.capabilities.isRequired,
+  comment: PropTypes.string,
+  groupIds: PropTypes.array,
+  groups: PropTypes.array,
+  hostsAllow: PropTypes.oneOf([ACCESS_ALLOW_ALL, ACCESS_DENY_ALL]),
+  id: PropTypes.id,
+  ifacesAllow: PropTypes.oneOf([ACCESS_ALLOW_ALL, ACCESS_DENY_ALL]),
+  name: PropTypes.string,
+  oldName: PropTypes.string,
+  password: PropTypes.string,
+  roleIds: PropTypes.array,
+  roles: PropTypes.array,
+  settings: PropTypes.settings.isRequired,
+  title: PropTypes.string,
+  user: PropTypes.model,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
+export default withCapabilities(Dialog);
+
+// vim: set ts=2 sw=2 tw=80:

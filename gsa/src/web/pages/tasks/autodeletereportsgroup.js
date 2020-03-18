@@ -1,0 +1,75 @@
+/* Copyright (C) 2017-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import {AUTO_DELETE_KEEP, AUTO_DELETE_NO} from 'gmp/models/task';
+
+import PropTypes from '../../utils/proptypes.js';
+
+import FormGroup from '../../components/form/formgroup.js';
+import Radio from '../../components/form/radio.js';
+import Spinner from '../../components/form/spinner.js';
+
+import Divider from '../../components/layout/divider.js';
+
+const AutoDeleteReportsGroup = ({
+  autoDelete = AUTO_DELETE_NO,
+  autoDeleteData,
+  onChange,
+}) => (
+  <FormGroup title={_('自动删除报告')} flex="column">
+    <Radio
+      title={_('不自动删除报告')}
+      name="auto_delete"
+      value={AUTO_DELETE_NO}
+      onChange={onChange}
+      checked={autoDelete !== AUTO_DELETE_KEEP}
+    />
+    <Divider>
+      <Radio
+        name="auto_delete"
+        value="keep"
+        onChange={onChange}
+        title={_('自动删除最旧的报告，但始终保持最新')}
+        checked={autoDelete === AUTO_DELETE_KEEP}
+      />
+      <Spinner
+        type="int"
+        min="1"
+        name="auto_delete_data"
+        value={autoDeleteData}
+        disabled={autoDelete !== AUTO_DELETE_KEEP}
+        onChange={onChange}
+      />
+      <span>{_('报告')}</span>
+    </Divider>
+  </FormGroup>
+);
+
+AutoDeleteReportsGroup.propTypes = {
+  autoDelete: PropTypes.oneOf([AUTO_DELETE_KEEP, AUTO_DELETE_NO]),
+  autoDeleteData: PropTypes.number,
+  onChange: PropTypes.func,
+};
+
+export default AutoDeleteReportsGroup;
+
+// vim: set ts=2 sw=2 tw=80:

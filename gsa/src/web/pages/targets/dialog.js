@@ -1,0 +1,492 @@
+/* Copyright (C) 2016-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import {_, _l} from 'gmp/locale/lang';
+
+import {NO_VALUE} from 'gmp/parser';
+
+import PropTypes from 'web/utils/proptypes';
+import withCapabilities from 'web/utils/withCapabilities';
+import {renderSelectItems, UNSET_VALUE} from 'web/utils/render';
+
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FileField from 'web/components/form/filefield';
+import FormGroup from 'web/components/form/formgroup';
+import Radio from 'web/components/form/radio';
+import Select from 'web/components/form/select';
+import TextField from 'web/components/form/textfield';
+import YesNoRadio from 'web/components/form/yesnoradio';
+
+import NewIcon from 'web/components/icon/newicon';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+import {
+  snmp_credential_filter,
+  ssh_credential_filter,
+  ESXI_CREDENTIAL_TYPES,
+  SMB_CREDENTIAL_TYPES,
+  SNMP_CREDENTIAL_TYPES,
+  SSH_CREDENTIAL_TYPES,
+  USERNAME_PASSWORD_CREDENTIAL_TYPE,
+} from 'gmp/models/credential';
+
+const DEFAULT_PORT = 22;
+
+const DEFAULT_PORT_LIST_ID = 'c7e03b6c-3bbe-11e1-a057-406186ea4fc5';
+const DEFAULT_PORT_LIST_NAME = 'OpenVAS Default';
+
+const DEFAULT_PORT_LISTS = [
+  {
+    id: DEFAULT_PORT_LIST_ID,
+    name: DEFAULT_PORT_LIST_NAME,
+  },
+];
+
+const ALIVE_TESTS_DEFAULT = 'Scan Config Default';
+
+const ALIVE_TESTS = [
+  'ICMP Ping',
+  'TCP-ACK Service Ping',
+  'TCP-SYN Service Ping',
+  'ARP Ping',
+  'ICMP & TCP-ACK Service Ping',
+  'ICMP & ARP Ping',
+  'TCP-ACK Service & ARP Ping',
+  'ICMP, TCP-ACK Service & ARP Ping',
+  'Consider Alive',
+];
+
+const ALIVE_TESTS_ITEMS = [
+  {
+    value: ALIVE_TESTS_DEFAULT,
+    label: _l(ALIVE_TESTS_DEFAULT),
+  },
+  ...ALIVE_TESTS.map(value => ({value, label: value})),
+];
+
+const NEW_SSH = {
+  id_field: 'ssh_credential_id',
+  types: SSH_CREDENTIAL_TYPES,
+  title: _l('创建新的SSH凭据'),
+};
+
+const NEW_SMB = {
+  id_field: 'smb_credential_id',
+  title: _l('创建新的SMB凭据'),
+  types: SMB_CREDENTIAL_TYPES,
+};
+
+const NEW_ESXI = {
+  id_field: 'esxi_credential_id',
+  title: _l('创建新的ESXi凭据'),
+  types: ESXI_CREDENTIAL_TYPES,
+};
+
+const NEW_SNMP = {
+  id_field: 'snmp_credential_id',
+  title: _l('创建新的SNMP凭据'),
+  types: SNMP_CREDENTIAL_TYPES,
+};
+
+const TargetDialog = ({
+  alive_tests = ALIVE_TESTS_DEFAULT,
+  capabilities,
+  comment = '',
+  credentials = [],
+  esxi_credential_id = UNSET_VALUE,
+  exclude_hosts = '',
+  hosts = '',
+  hosts_count,
+  in_use = false,
+  name = _('未命名'),
+  port = DEFAULT_PORT,
+  port_list_id = DEFAULT_PORT_LIST_ID,
+  port_lists = DEFAULT_PORT_LISTS,
+  reverse_lookup_only = NO_VALUE,
+  reverse_lookup_unify = NO_VALUE,
+  smb_credential_id = UNSET_VALUE,
+  snmp_credential_id = UNSET_VALUE,
+  ssh_credential_id = UNSET_VALUE,
+  target_source = 'manual',
+  target_exclude_source = 'manual',
+  title = _('新建目标'),
+  onClose,
+  onNewCredentialsClick,
+  onNewPortListClick,
+  onSave,
+  onPortListChange,
+  onSshCredentialChange,
+  onSmbCredentialChange,
+  onEsxiCredentialChange,
+  onSnmpCredentialChange,
+  ...initial
+}) => {
+  const ssh_credentials = credentials.filter(ssh_credential_filter);
+  const up_credentials = credentials.filter(
+    value => value.credential_type === USERNAME_PASSWORD_CREDENTIAL_TYPE,
+  );
+  const snmp_credentials = credentials.filter(snmp_credential_filter);
+
+  const uncontrolledValues = {
+    ...initial,
+    alive_tests,
+    comment,
+    name,
+    port,
+    exclude_hosts,
+    hosts,
+    hosts_count,
+    in_use,
+    reverse_lookup_only,
+    reverse_lookup_unify,
+    target_source,
+    target_exclude_source,
+  };
+
+  const controlledValues = {
+    port_list_id,
+    esxi_credential_id,
+    smb_credential_id,
+    snmp_credential_id,
+    ssh_credential_id,
+  };
+
+  return (
+    <SaveDialog
+      title={title}
+      defaultValues={uncontrolledValues}
+      values={controlledValues}
+      onClose={onClose}
+      onSave={onSave}
+    >
+      {({values: state, onValueChange}) => {
+        return (
+          <Layout flex="column">
+            <FormGroup title={_('名称')}>
+              <TextField
+                name="name"
+                grow="1"
+                size="30"
+                value={state.name}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            <FormGroup title={_('备注')} flex="column">
+              <TextField
+                name="comment"
+                size="30"
+                value={state.comment}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            <FormGroup title={_('主机')} flex="column">
+              <Divider flex="column">
+                <Divider>
+                  <Radio
+                    title={_('手册')}
+                    name="target_source"
+                    disabled={state.in_use}
+                    checked={state.target_source === 'manual'}
+                    value="manual"
+                    onChange={onValueChange}
+                  />
+                  <TextField
+                    grow="1"
+                    disabled={state.in_use || state.target_source !== 'manual'}
+                    name="hosts"
+                    value={state.hosts}
+                    onChange={onValueChange}
+                  />
+                </Divider>
+
+                <Divider>
+                  <Radio
+                    title={_('从文件中选择')}
+                    name="target_source"
+                    disabled={state.in_use}
+                    checked={state.target_source === 'file'}
+                    value="file"
+                    onChange={onValueChange}
+                  />
+                  <FileField
+                    name="file"
+                    disabled={state.in_use}
+                    onChange={onValueChange}
+                  />
+                </Divider>
+              </Divider>
+
+              {state.hosts_count && (
+                <Layout>
+                  <Radio
+                    title={_('从主机资源({{count}}个主机)', {
+                      count: state.hosts_count,
+                    })}
+                    name="target_source"
+                    disabled={state.in_use}
+                    checked={state.target_source === 'asset_hosts'}
+                    value="asset_hosts"
+                    onChange={onValueChange}
+                  />
+                </Layout>
+              )}
+            </FormGroup>
+
+            <FormGroup title={_('排除主机')} flex="column">
+              <Divider flex="column">
+                <Divider>
+                  <Radio
+                    title={_('手册')}
+                    name="target_exclude_source"
+                    disabled={state.in_use}
+                    checked={state.target_exclude_source === 'manual'}
+                    value="manual"
+                    onChange={onValueChange}
+                  />
+                  <TextField
+                    grow="1"
+                    disabled={
+                      state.in_use || state.target_exclude_source !== 'manual'
+                    }
+                    name="exclude_hosts"
+                    value={state.exclude_hosts}
+                    onChange={onValueChange}
+                  />
+                </Divider>
+
+                <Divider>
+                  <Radio
+                    title={_('从文件中选择')}
+                    name="target_exclude_source"
+                    disabled={state.in_use}
+                    checked={state.target_exclude_source === 'file'}
+                    value="file"
+                    onChange={onValueChange}
+                  />
+                  <FileField
+                    name="exclude_file"
+                    disabled={state.in_use}
+                    onChange={onValueChange}
+                  />
+                </Divider>
+              </Divider>
+            </FormGroup>
+
+            {capabilities.mayOp('get_port_lists') && (
+              <FormGroup title={_('端口列表')}>
+                <Divider>
+                  <Select
+                    name="port_list_id"
+                    disabled={state.in_use}
+                    items={renderSelectItems(port_lists)}
+                    value={state.port_list_id}
+                    onChange={onPortListChange}
+                  />
+                  {!state.in_use && (
+                    <Layout>
+                      <NewIcon
+                        title={_('创建新的端口列表')}
+                        onClick={onNewPortListClick}
+                      />
+                    </Layout>
+                  )}
+                </Divider>
+              </FormGroup>
+            )}
+
+            <FormGroup title={_('存活测试')}>
+              <Select
+                name="alive_tests"
+                items={ALIVE_TESTS_ITEMS}
+                value={state.alive_tests}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            {capabilities.mayOp('get_credentials') && (
+              <h4>{_('登录凭据')}</h4>
+            )}
+
+            {capabilities.mayOp('get_credentials') && (
+              <FormGroup title={_('SSH')}>
+                <Divider>
+                  <Select
+                    box
+                    name="ssh_credential_id"
+                    disabled={state.in_use}
+                    items={renderSelectItems(ssh_credentials, UNSET_VALUE)}
+                    value={state.ssh_credential_id}
+                    onChange={onSshCredentialChange}
+                  />
+                  <Layout>{_('端口')}</Layout>
+                  <TextField
+                    size="6"
+                    name="port"
+                    disabled={state.in_use}
+                    value={state.port}
+                    onChange={onValueChange}
+                  />
+                  {!state.in_use && (
+                    <Layout>
+                      <NewIcon
+                        title={_('创建新的凭据')}
+                        value={NEW_SSH}
+                        onClick={onNewCredentialsClick}
+                      />
+                    </Layout>
+                  )}
+                </Divider>
+              </FormGroup>
+            )}
+
+            {capabilities.mayOp('get_credentials') && (
+              <FormGroup title={_('SMB')}>
+                <Divider>
+                  <Select
+                    name="smb_credential_id"
+                    disabled={state.in_use}
+                    items={renderSelectItems(up_credentials, UNSET_VALUE)}
+                    value={state.smb_credential_id}
+                    onChange={onSmbCredentialChange}
+                  />
+                  {!in_use && (
+                    <Layout>
+                      <NewIcon
+                        title={_('创建新的凭据')}
+                        value={NEW_SMB}
+                        onClick={onNewCredentialsClick}
+                      />
+                    </Layout>
+                  )}
+                </Divider>
+              </FormGroup>
+            )}
+
+            {capabilities.mayOp('get_credentials') && (
+              <FormGroup title={_('ESXi')}>
+                <Divider>
+                  <Select
+                    disabled={state.in_use}
+                    name="esxi_credential_id"
+                    items={renderSelectItems(up_credentials, UNSET_VALUE)}
+                    value={state.esxi_credential_id}
+                    onChange={onEsxiCredentialChange}
+                  />
+                  {!state.in_use && (
+                    <Layout>
+                      <NewIcon
+                        title={_('创建新的凭据')}
+                        value={NEW_ESXI}
+                        onClick={onNewCredentialsClick}
+                      />
+                    </Layout>
+                  )}
+                </Divider>
+              </FormGroup>
+            )}
+
+            {capabilities.mayOp('get_credentials') && (
+              <FormGroup title={_('SNMP')}>
+                <Divider>
+                  <Select
+                    disabled={state.in_use}
+                    name="snmp_credential_id"
+                    items={renderSelectItems(snmp_credentials, UNSET_VALUE)}
+                    value={state.snmp_credential_id}
+                    onChange={onSnmpCredentialChange}
+                  />
+                  {!in_use && (
+                    <Layout>
+                      <NewIcon
+                        title={_('创建新的凭据')}
+                        value={NEW_SNMP}
+                        onClick={onNewCredentialsClick}
+                      />
+                    </Layout>
+                  )}
+                </Divider>
+              </FormGroup>
+            )}
+
+            <FormGroup title={_('仅反向查找')}>
+              <YesNoRadio
+                name="reverse_lookup_only"
+                disabled={state.in_use}
+                value={state.reverse_lookup_only}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            <FormGroup title={_('反向查找统一')}>
+              <YesNoRadio
+                name="reverse_lookup_unify"
+                disabled={state.in_use}
+                value={state.reverse_lookup_unify}
+                onChange={onValueChange}
+              />
+            </FormGroup>
+          </Layout>
+        );
+      }}
+    </SaveDialog>
+  );
+};
+
+TargetDialog.propTypes = {
+  alive_tests: PropTypes.oneOf([ALIVE_TESTS_DEFAULT, ...ALIVE_TESTS]),
+  capabilities: PropTypes.capabilities.isRequired,
+  comment: PropTypes.string,
+  credentials: PropTypes.array,
+  esxi_credential_id: PropTypes.idOrZero,
+  exclude_hosts: PropTypes.string,
+  hosts: PropTypes.string,
+  hosts_count: PropTypes.number,
+  in_use: PropTypes.bool,
+  name: PropTypes.string,
+  port: PropTypes.numberOrNumberString,
+  port_list_id: PropTypes.idOrZero,
+  port_lists: PropTypes.array,
+  reverse_lookup_only: PropTypes.yesno,
+  reverse_lookup_unify: PropTypes.yesno,
+  smb_credential_id: PropTypes.idOrZero,
+  snmp_credential_id: PropTypes.idOrZero,
+  ssh_credential_id: PropTypes.idOrZero,
+  target_exclude_source: PropTypes.oneOf(['manual', 'file']),
+  target_source: PropTypes.oneOf(['manual', 'file', 'asset_hosts']),
+  title: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onEsxiCredentialChange: PropTypes.func.isRequired,
+  onNewCredentialsClick: PropTypes.func.isRequired,
+  onNewPortListClick: PropTypes.func.isRequired,
+  onPortListChange: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onSmbCredentialChange: PropTypes.func.isRequired,
+  onSnmpCredentialChange: PropTypes.func.isRequired,
+  onSshCredentialChange: PropTypes.func.isRequired,
+};
+
+export default withCapabilities(TargetDialog);
+
+// vim: set ts=2 sw=2 tw=80:

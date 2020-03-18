@@ -1,0 +1,166 @@
+/* Copyright (C) 2016-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import PropTypes from 'web/utils/proptypes';
+
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FormGroup from 'web/components/form/formgroup';
+import TextField from 'web/components/form/textfield';
+import Select from 'web/components/form/select';
+
+/* eslint-disable max-len */
+import {CertBundCreatedDisplay} from 'web/pages/certbund/dashboard/createddisplay';
+import {CertBundCvssDisplay} from 'web/pages/certbund/dashboard/cvssdisplay';
+import {CvesCreatedDisplay} from 'web/pages/cves/dashboard/createddisplay';
+import {CvesSeverityClassDisplay} from 'web/pages/cves/dashboard/severityclassdisplay';
+import {HostsModifiedDisplay} from 'web/pages/hosts/dashboard/modifieddisplay';
+import {HostsTopologyDisplay} from 'web/pages/hosts/dashboard/topologydisplay';
+import {HostsVulnScoreDisplay} from 'web/pages/hosts/dashboard/vulnscoredisplay';
+import {NvtsSeverityClassDisplay} from 'web/pages/nvts/dashboard/severityclassdisplay';
+import {OsSeverityClassDisplay} from 'web/pages/operatingsystems/dashboard/severityclassdisplay';
+import {OsVulnScoreDisplay} from 'web/pages/operatingsystems/dashboard/vulnscoredisplay';
+import {ReportsHighResultsDisplay} from 'web/pages/reports/dashboard/highresultsdisplay';
+import {ReportsSeverityDisplay} from 'web/pages/reports/dashboard/severityclassdisplay';
+import {ResultsSeverityDisplay} from 'web/pages/results/dashboard/severityclassdisplay';
+import {TasksSeverityDisplay} from 'web/pages/tasks/dashboard/severityclassdisplay';
+import {TasksStatusDisplay} from 'web/pages/tasks/dashboard/statusdisplay';
+/* eslint-enable max-len */
+
+export const MAX_TITLE_LENGTH = 50;
+
+export const DEFAULT_DISPLAYS = [
+  [TasksSeverityDisplay.displayId, TasksStatusDisplay.displayId],
+  [CvesCreatedDisplay.displayId, NvtsSeverityClassDisplay.displayId],
+];
+
+const SCAN_DEFAULT_DISPLAYS = [
+  [ResultsSeverityDisplay.displayId, ReportsSeverityDisplay.displayId],
+  [
+    TasksStatusDisplay.displayId,
+    ReportsHighResultsDisplay.displayId,
+    TasksSeverityDisplay.displayId,
+  ],
+];
+
+const ASSET_DEFAULT_DISPLAYS = [
+  [
+    HostsVulnScoreDisplay.displayId,
+    HostsTopologyDisplay.displayId,
+    OsVulnScoreDisplay.displayId,
+  ],
+  [OsSeverityClassDisplay.displayId, HostsModifiedDisplay.displayId],
+];
+
+const SECINFO_DEFAULT_DISPLAYS = [
+  [
+    NvtsSeverityClassDisplay.displayId,
+    CvesCreatedDisplay.displayId,
+    CvesSeverityClassDisplay.displayId,
+  ],
+  [CertBundCreatedDisplay.displayId, CertBundCvssDisplay.displayId],
+];
+
+const EMPTY_DISPLAYS = [];
+
+const NewDashboardDialog = ({additionalDisplayChoices, onClose, onSave}) => {
+  const defaultDisplayChoices = [
+    {
+      label: _('默认值'),
+      key: 'default',
+      value: DEFAULT_DISPLAYS,
+    },
+    {
+      label: _('扫描显示器'),
+      key: 'scan-displays',
+      value: SCAN_DEFAULT_DISPLAYS,
+    },
+    {
+      label: _('资产显示器'),
+      key: 'asset-displays',
+      value: ASSET_DEFAULT_DISPLAYS,
+    },
+    {
+      label: _('安全信息显示器'),
+      key: 'secinfo-displays',
+      value: SECINFO_DEFAULT_DISPLAYS,
+    },
+    {
+      label: _('空值'),
+      key: 'empty',
+      value: EMPTY_DISPLAYS,
+    },
+    ...additionalDisplayChoices,
+  ];
+  return (
+    <SaveDialog
+      buttonTitle={_('添加')}
+      title={_('添加新的仪表盘')}
+      width="550px"
+      minHeight={165}
+      minWidth={340}
+      defaultValues={{
+        title: _('未命名'),
+        defaultDisplays: DEFAULT_DISPLAYS,
+      }}
+      onClose={onClose}
+      onSave={onSave}
+    >
+      {({values, onValueChange}) => (
+        <React.Fragment>
+          <FormGroup title={_('仪表盘标题')} titleSize={4}>
+            <TextField
+              grow
+              name="title"
+              maxLength={MAX_TITLE_LENGTH}
+              value={values.title}
+              onChange={onValueChange}
+            />
+          </FormGroup>
+          <FormGroup title={_('初始显示')} titleSize={4}>
+            <Select
+              name="defaultDisplays"
+              items={defaultDisplayChoices}
+              value={values.defaultDisplays}
+              onChange={onValueChange}
+            />
+          </FormGroup>
+        </React.Fragment>
+      )}
+    </SaveDialog>
+  );
+};
+
+NewDashboardDialog.propTypes = {
+  additionalDisplayChoices: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.toString,
+      value: PropTypes.array,
+    }),
+  ),
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
+export default NewDashboardDialog;
+
+// vim: set ts=2 sw=2 tw=80:

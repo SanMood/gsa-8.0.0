@@ -1,0 +1,110 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import {_, _l} from 'gmp/locale/lang';
+import {longDate} from 'gmp/locale/date';
+
+import {isDefined} from 'gmp/utils/identity';
+
+import {TASKS_FILTER_FILTER} from 'gmp/models/filter';
+import {ReccurenceFrequency} from 'gmp/models/event';
+import date from 'gmp/models/date';
+
+import ScheduleChart from 'web/components/chart/schedule';
+
+import DataDisplay from 'web/components/dashboard/display/datadisplay';
+import DataTableDisplay from 'web/components/dashboard/display/datatabledisplay'; // eslint-disable-line max-len
+import DataTable from 'web/components/dashboard/display/datatable';
+import createDisplay from 'web/components/dashboard/display/createDisplay';
+import {registerDisplay} from 'web/components/dashboard/registry';
+
+import {TasksSchedulesLoader} from './loaders';
+
+const today = date().startOf('day');
+const week = today.clone().add(7, 'days');
+
+const transformScheduleData = (data = [], {endDate}) => {
+  return data
+    .filter(task => isDefined(task.schedule))
+    .map(task => {
+      const {schedule, name} = task;
+      const {event = {}} = schedule;
+      const {durationInSeconds: duration, recurrence = {}} = event;
+      const {freq, interval = 1} = recurrence;
+      let period;
+      if (freq === ReccurenceFrequency.MINUTELY) {
+        period = interval * 60;
+      } else if (freq === ReccurenceFrequency.SECONDLY) {
+        period = interval;
+      }
+      return {
+        label: name,
+        duration,
+        nextStart: event.nextDate,
+        starts: event.getNextDates(endDate),
+        isInfinite: isDefined(recurrence.isFinite) && !recurrence.isFinite(),
+        period,
+      };
+    });
+};
+
+export const TasksSchedulesDisplay = createDisplay({
+  loaderComponent: TasksSchedulesLoader,
+  displayComponent: DataDisplay,
+  chartComponent: ScheduleChart,
+  dataTransform: transformScheduleData,
+  title: () => _('下一个计划任务'),
+  displayName: 'TasksScheduleDisplay',
+  displayId: 'task-by-schedules',
+  filtersFilter: TASKS_FILTER_FILTER,
+  startDate: today,
+  endDate: week,
+  showToggleLegend: false,
+});
+
+export const TasksSchedulesTableDisplay = createDisplay({
+  loaderComponent: TasksSchedulesLoader,
+  displayComponent: DataTableDisplay,
+  chartComponent: DataTable,
+  dataTitles: [_l('任务名称'), _l('下次计划时间')],
+  dataRow: row => [
+    row.label,
+    isDefined(row.nextStart) ? longDate(row.nextStart) : '-',
+  ],
+  dataTransform: transformScheduleData,
+  title: () => _('下一个计划任务'),
+  displayId: 'task-by-schedules-table',
+  displayName: 'TasksSchedulesTableDisplay',
+  filtersFilter: TASKS_FILTER_FILTER,
+  startDate: today,
+  endDate: week,
+});
+
+registerDisplay(TasksSchedulesDisplay.displayId, TasksSchedulesDisplay, {
+  title: _l('图表：下一个计划任务'),
+});
+
+registerDisplay(
+  TasksSchedulesTableDisplay.displayId,
+  TasksSchedulesTableDisplay,
+  {
+    title: _l('表格：下一个计划任务'),
+  },
+);
+
+// vim: set ts=2 sw=2 tw=80:
