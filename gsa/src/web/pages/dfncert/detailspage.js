@@ -1,0 +1,202 @@
+/* Copyright (C) 2017-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import {isDefined} from 'gmp/utils/identity';
+
+import DfnCertAdvIcon from 'web/components/icon/dfncertadvicon';
+import ExportIcon from 'web/components/icon/exporticon';
+import ManualIcon from 'web/components/icon/manualicon';
+import ListIcon from 'web/components/icon/listicon';
+
+import Divider from 'web/components/layout/divider';
+import IconDivider from 'web/components/layout/icondivider';
+import Layout from 'web/components/layout/layout';
+
+import Tab from 'web/components/tab/tab';
+import TabLayout from 'web/components/tab/tablayout';
+import TabList from 'web/components/tab/tablist';
+import TabPanel from 'web/components/tab/tabpanel';
+import TabPanels from 'web/components/tab/tabpanels';
+import Tabs from 'web/components/tab/tabs';
+
+import DetailsLink from 'web/components/link/detailslink';
+import ExternalLink from 'web/components/link/externallink';
+
+import DetailsBlock from 'web/entity/block';
+import EntityPage from 'web/entity/page';
+import EntityComponent from 'web/entity/component';
+import EntitiesTab from 'web/entity/tab';
+import EntityTags from 'web/entity/tags';
+import withEntityContainer from 'web/entity/withEntityContainer';
+
+import {selector, loadEntity} from 'web/store/entities/dfncerts';
+
+import PropTypes from 'web/utils/proptypes';
+
+import DfnCertAdvDetails from './details';
+
+const ToolBarIcons = ({entity, onDfnCertAdvDownloadClick}) => (
+  <Divider margin="10px">
+    <IconDivider>
+      <ManualIcon
+        page="vulnerabilitymanagement"
+        anchor="id15"
+        title={_('帮助：DFN-CERT公告')}
+      />
+      <ListIcon title={_('DFN-CERT公告')} page="dfncerts" />
+    </IconDivider>
+    <ExportIcon
+      value={entity}
+      title={_('导出DFN-CERT公告')}
+      onClick={onDfnCertAdvDownloadClick}
+    />
+  </Divider>
+);
+
+ToolBarIcons.propTypes = {
+  entity: PropTypes.model.isRequired,
+  onDfnCertAdvDownloadClick: PropTypes.func.isRequired,
+};
+
+const Details = ({entity, links = true}) => {
+  const {cves, summary, additional_links} = entity;
+  return (
+    <Layout flex="column">
+      <DfnCertAdvDetails entity={entity} />
+
+      <DetailsBlock title={_('摘要')}>
+        {isDefined(summary) ? <p>{summary}</p> : _('无')}
+      </DetailsBlock>
+
+      {additional_links.length > 0 && (
+        <DetailsBlock title={_('其他链接')}>
+          <ul>
+            {additional_links.map(link => (
+              <li key={link}>
+                <ExternalLink to={link}>{link}</ExternalLink>
+              </li>
+            ))}
+          </ul>
+        </DetailsBlock>
+      )}
+
+      <DetailsBlock title={_('CVE参考')}>
+        {cves.length > 0 ? (
+          <ul>
+            {cves.map(cve => (
+              <li key={cve}>
+                <DetailsLink type="cve" id={cve}>
+                  {cve}
+                </DetailsLink>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          _('None')
+        )}
+      </DetailsBlock>
+    </Layout>
+  );
+};
+
+Details.propTypes = {
+  entity: PropTypes.model.isRequired,
+  links: PropTypes.bool,
+};
+
+const DfnCertAdvPage = ({
+  entity,
+  onChanged,
+  onDownloaded,
+  onError,
+  onInteraction,
+  ...props
+}) => (
+  <EntityComponent
+    name="dfncert"
+    onDownloaded={onDownloaded}
+    onDownloadError={onError}
+    onInteraction={onInteraction}
+  >
+    {({download}) => (
+      <EntityPage
+        {...props}
+        entity={entity}
+        sectionIcon={<DfnCertAdvIcon size="large" />}
+        title={_('DFN-CERT公告')}
+        toolBarIcons={ToolBarIcons}
+        onDfnCertAdvDownloadClick={download}
+        onInteraction={onInteraction}
+      >
+        {({activeTab = 0, onActivateTab}) => {
+          return (
+            <Layout grow="1" flex="column">
+              <TabLayout grow="1" align={['start', 'end']}>
+                <TabList
+                  active={activeTab}
+                  align={['start', 'stretch']}
+                  onActivateTab={onActivateTab}
+                >
+                  <Tab>{_('信息')}</Tab>
+                  <EntitiesTab entities={entity.userTags}>
+                    {_('用户标签')}
+                  </EntitiesTab>
+                </TabList>
+              </TabLayout>
+
+              <Tabs active={activeTab}>
+                <TabPanels>
+                  <TabPanel>
+                    <Details entity={entity} />
+                  </TabPanel>
+                  <TabPanel>
+                    <EntityTags
+                      entity={entity}
+                      onChanged={onChanged}
+                      onError={onError}
+                      onInteraction={onInteraction}
+                    />
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
+            </Layout>
+          );
+        }}
+      </EntityPage>
+    )}
+  </EntityComponent>
+);
+
+DfnCertAdvPage.propTypes = {
+  entity: PropTypes.model,
+  onChanged: PropTypes.func.isRequired,
+  onDownloaded: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
+  onInteraction: PropTypes.func.isRequired,
+};
+
+export default withEntityContainer('dfncert', {
+  load: loadEntity,
+  entitySelector: selector,
+})(DfnCertAdvPage);
+
+// vim: set ts=2 sw=2 tw=80:

@@ -1,0 +1,177 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import {withRouter} from 'react-router-dom';
+
+import styled from 'styled-components';
+
+import {_, _l} from 'gmp/locale/lang';
+import {longDate} from 'gmp/locale/date';
+
+import {parseFloat, parseSeverity} from 'gmp/parser';
+
+import {HOSTS_FILTER_FILTER} from 'gmp/models/filter';
+
+import PropTypes from 'web/utils/proptypes';
+import compose from 'web/utils/compose';
+import {resultSeverityRiskFactor} from 'web/utils/severity';
+
+import BarChart from 'web/components/chart/bar';
+
+import DataDisplay from 'web/components/dashboard/display/datadisplay';
+import DataTableDisplay from 'web/components/dashboard/display/datatabledisplay'; // eslint-disable-line max-len
+import withFilterSelection from 'web/components/dashboard/display/withFilterSelection'; // eslint-disable-line max-len
+import createDisplay from 'web/components/dashboard/display/createDisplay';
+import {riskFactorColorScale} from 'web/components/dashboard/display/utils';
+import {registerDisplay} from 'web/components/dashboard/registry';
+
+import {HostsVulnScoreLoader} from './loaders';
+
+const ToolTip = styled.div`
+  font-weight: normal;
+  text-align: center;
+  line-height: 1.2em;
+`;
+
+const transformVulnScoreData = (data = {}, {severityClass}) => {
+  const {groups = []} = data;
+  const tdata = groups
+    .filter(group => {
+      const {stats = {}} = group;
+      const {severity = 0} = stats;
+      return parseFloat(severity.max) > 0;
+    })
+    .map(group => {
+      const {stats, text, value: id} = group;
+      const {modified, name} = text;
+      const {severity} = stats;
+      const averageSeverity = parseSeverity(severity.mean);
+      const riskFactor = resultSeverityRiskFactor(averageSeverity);
+      const modifiedDate = longDate(modified);
+      const toolTip = (
+        <ToolTip>
+          <b>{name}:</b>
+          <br />
+          {_('{{sevMax}}：({{riskFactor}})', {
+            sevMax: severity.max,
+            riskFactor,
+          })}
+          <br />
+          <b>{_('更新时间：')}</b>
+          {modifiedDate}
+        </ToolTip>
+      );
+
+      return {
+        y: parseFloat(severity.max),
+        x: name,
+        label: name,
+        color: riskFactorColorScale(riskFactor),
+        toolTip,
+        id,
+      };
+    });
+  return tdata.reverse();
+};
+
+export class HostsVulnScoreDisplay extends React.Component {
+  constructor(...args) {
+    super(...args);
+
+    this.handleDataClick = this.handleDataClick.bind(this);
+  }
+
+  handleDataClick(data) {
+    const {history} = this.props;
+
+    history.push(`/host/${data.id}`);
+  }
+
+  render() {
+    const {filter, ...props} = this.props;
+    return (
+      <HostsVulnScoreLoader filter={filter}>
+        {loaderProps => (
+          <DataDisplay
+            {...props}
+            {...loaderProps}
+            filter={filter}
+            dataTransform={transformVulnScoreData}
+            title={() => _('最容易受到攻击的主机')}
+            showToggleLegend={false}
+          >
+            {({width, height, data: tdata, svgRef}) => (
+              <BarChart
+                svgRef={svgRef}
+                horizontal
+                showLegend={false}
+                width={width}
+                height={height}
+                data={tdata}
+                xLabel={_('脆弱性（严重性）得分')}
+                onDataClick={this.handleDataClick}
+              />
+            )}
+          </DataDisplay>
+        )}
+      </HostsVulnScoreLoader>
+    );
+  }
+}
+
+HostsVulnScoreDisplay.propTypes = {
+  filter: PropTypes.filter,
+  history: PropTypes.object.isRequired,
+};
+
+HostsVulnScoreDisplay = compose(
+  withRouter,
+  withFilterSelection({
+    filtersFilter: HOSTS_FILTER_FILTER,
+  }),
+)(HostsVulnScoreDisplay);
+
+HostsVulnScoreDisplay.displayId = 'host-by-most-vulnerable';
+
+export const HostsVulnScoreTableDisplay = createDisplay({
+  loaderComponent: HostsVulnScoreLoader,
+  displayComponent: DataTableDisplay,
+  dataTransform: transformVulnScoreData,
+  dataTitles: [_l('主机名称'), _l('最高. 平均严重程度分数')],
+  dataRow: row => [row.x, row.y],
+  title: () => _('最容易受到攻击的主机'),
+  filtersFilter: HOSTS_FILTER_FILTER,
+  displayId: 'HostsVulnScoreTableDisplay',
+  displayName: 'host-by-most-vulnerable-table',
+});
+
+registerDisplay(HostsVulnScoreDisplay.displayId, HostsVulnScoreDisplay, {
+  title: _l('图表：按漏洞得分列出主机'),
+});
+
+registerDisplay(
+  HostsVulnScoreTableDisplay.displayId,
+  HostsVulnScoreTableDisplay,
+  {
+    title: _l('表格：按漏洞得分列出主机'),
+  },
+);
+
+// vim: set ts=2 sw=2 tw=80:
