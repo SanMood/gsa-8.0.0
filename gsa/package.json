@@ -1,0 +1,112 @@
+{
+  "name": "gsa",
+  "version": "8.0.0",
+  "description": "Greenbone Security Assistant",
+  "keywords": [
+    "openvas",
+    "gmp",
+    "gsa",
+    "greenbone",
+    "greenbone security assistant"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greenbone/gsa/"
+  },
+  "author": "Björn Ricks <bjoern.ricks@greenbone.net>",
+  "license": "GPL-2.0+",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=8.0"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "dependencies": {
+    "@vx/axis": "^0.0.183",
+    "@vx/gradient": "^0.0.183",
+    "@vx/shape": "^0.0.179",
+    "core-js": "^2.6.5",
+    "d3-cloud": "^1.2.5",
+    "d3-color": "^1.2.3",
+    "d3-force": "^2.0.0",
+    "d3-format": "^1.3.2",
+    "d3-hierarchy": "^1.1.8",
+    "d3-interpolate": "^1.3.2",
+    "d3-scale": "^2.1.2",
+    "d3-shape": "^1.3.3",
+    "downshift": "^1.31.16",
+    "fast-deep-equal": "^1.1.0",
+    "fast-xml-parser": "^3.12.13",
+    "glamor": "^2.20.40",
+    "history": "^4.7.2",
+    "hoist-non-react-statics": "^3.3.0",
+    "i18next": "^14.0.1",
+    "i18next-xhr-backend": "1.5.1",
+    "ical.js": "^1.3.0",
+    "memoize-one": "^5.0.0",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.23",
+    "prop-types": "^15.6.2",
+    "qhistory": "^1.0.3",
+    "qs": "^6.6.0",
+    "react": "^16.7.0",
+    "react-beautiful-dnd": "^7.1.3",
+    "react-datepicker": "^1.8.0",
+    "react-dom": "^16.7.0",
+    "react-redux": "^6.0.0",
+    "react-router-dom": "^4.3.1",
+    "react-scripts": "2.1.8",
+    "redux": "^4.0.1",
+    "redux-logger": "^3.0.6",
+    "redux-thunk": "^2.3.0",
+    "styled-components": "^3.4.10",
+    "uuid": "^3.3.2",
+    "whatwg-fetch": "^3.0.0",
+    "x2js": "^3.2.6"
+  },
+  "scripts": {
+    "test": "NODE_PATH=src react-scripts test",
+    "test:coverage": "NODE_PATH=src react-scripts test --coverage --maxWorkers 2",
+    "lint": "NODE_PATH=src eslint --max-warnings 0 src",
+    "start": "NODE_PATH=src react-scripts start",
+    "build": "NODE_PATH=src react-scripts build",
+    "eject": "NODE_PATH=src react-scripts eject"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^4.0.0",
+    "husky": "^1.3.1",
+    "jest-dom": "^3.0.0",
+    "jest-junit": "^6.0.1",
+    "jest-styled-components": "^6.2.0",
+    "lint-staged": "^8.1.3",
+    "prettier": "1.16.4",
+    "react-testing-library": "^5.4.4"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,mjs}",
+      "!src/web/stories/**",
+      "!src/gmp/index.js",
+      "!src/setupTests.js",
+      "!src/web/utils/testing.js"
+    ]
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie < 11",
+    "not op_mini all"
+  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,json}": [
+      "prettier --write",
+      "git add"
+    ]
+  }
+}
