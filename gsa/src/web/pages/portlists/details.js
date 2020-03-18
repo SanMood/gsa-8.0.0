@@ -1,0 +1,101 @@
+/* Copyright (C) 2017-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import PropTypes from 'web/utils/proptypes';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+import DetailsLink from 'web/components/link/detailslink';
+
+import InfoTable from 'web/components/table/infotable';
+import TableBody from 'web/components/table/body';
+import TableData from 'web/components/table/data';
+import TableRow from 'web/components/table/row';
+
+import {Col} from 'web/entity/page';
+
+const PortListDetails = ({entity, ...props}) => {
+  const {
+    comment,
+    port_count = {
+      all: 0,
+      tcp: 0,
+      udp: 0,
+    },
+    targets = [],
+  } = entity;
+  return (
+    <Layout flex="column" grow>
+      <InfoTable>
+        <colgroup>
+          <Col width="10%" />
+          <Col width="90%" />
+        </colgroup>
+        <TableBody>
+          <TableRow>
+            <TableData>{_('备注')}</TableData>
+            <TableData>{comment}</TableData>
+          </TableRow>
+
+          <TableRow>
+            <TableData>{_('端口数')}</TableData>
+            <TableData>{port_count.all}</TableData>
+          </TableRow>
+
+          <TableRow>
+            <TableData>{_('TCP端口数')}</TableData>
+            <TableData>{port_count.tcp}</TableData>
+          </TableRow>
+
+          <TableRow>
+            <TableData>{_('UDP端口数')}</TableData>
+            <TableData>{port_count.udp}</TableData>
+          </TableRow>
+
+          {targets.length > 0 && (
+            <TableRow>
+              <TableData>{_('使用此端口列表的目标')}</TableData>
+              <TableData>
+                <Divider>
+                  {targets.map(target => (
+                    <DetailsLink key={target.id} id={target.id} type="target">
+                      {target.name}
+                    </DetailsLink>
+                  ))}
+                </Divider>
+              </TableData>
+            </TableRow>
+          )}
+        </TableBody>
+      </InfoTable>
+    </Layout>
+  );
+};
+
+PortListDetails.propTypes = {
+  entity: PropTypes.model.isRequired,
+};
+
+export default PortListDetails;
+
+// vim: set ts=2 sw=2 tw=80:

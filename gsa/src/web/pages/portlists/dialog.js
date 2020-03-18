@@ -1,0 +1,181 @@
+/* Copyright (C) 2016-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import _ from 'gmp/locale';
+
+import {NO_VALUE, YES_VALUE} from 'gmp/parser';
+
+import {isDefined} from 'gmp/utils/identity';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+import PropTypes from 'web/utils/proptypes';
+
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FileField from 'web/components/form/filefield';
+import FormGroup from 'web/components/form/formgroup';
+import Radio from 'web/components/form/radio';
+import TextField from 'web/components/form/textfield';
+
+import NewIcon from 'web/components/icon/newicon';
+
+import Section from 'web/components/section/section';
+
+import PortRangesTable from './portrangestable';
+
+const FROM_FILE = YES_VALUE;
+const NOT_FROM_FILE = NO_VALUE;
+
+const PortListsDialog = ({
+  comment = '',
+  from_file = NO_VALUE,
+  id,
+  name = _('未命名'),
+  port_list,
+  port_range = 'T:1-5,7,9,U:1-3,5,7,9',
+  port_ranges = [],
+  title = _('新建端口列表'),
+  onClose,
+  onNewPortRangeClick,
+  onTmpDeletePortRange,
+  onSave,
+}) => {
+  const is_edit = isDefined(port_list);
+
+  const newrangeicon = (
+    <div>
+      <NewIcon
+        value={port_list}
+        title={_('添加端口范围')}
+        onClick={onNewPortRangeClick}
+      />
+    </div>
+  );
+
+  const data = {
+    id,
+    comment,
+    from_file,
+    name,
+    port_range,
+  };
+
+  return (
+    <SaveDialog
+      title={title}
+      onClose={onClose}
+      onSave={onSave}
+      defaultValues={data}
+      values={{port_ranges}}
+    >
+      {({values: state, onValueChange}) => {
+        return (
+          <Layout flex="column">
+            <FormGroup title={_('名称')}>
+              <TextField
+                name="name"
+                value={state.name}
+                grow="1"
+                size="30"
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            <FormGroup title={_('备注')}>
+              <TextField
+                name="comment"
+                value={state.comment}
+                grow="1"
+                size="30"
+                onChange={onValueChange}
+              />
+            </FormGroup>
+
+            {!is_edit && (
+              <FormGroup title={_('端口范围')} flex="column">
+                <Divider flex="column">
+                  <Divider>
+                    <Radio
+                      title={_('手册')}
+                      name="from_file"
+                      value={NOT_FROM_FILE}
+                      onChange={onValueChange}
+                      checked={from_file !== FROM_FILE}
+                    />
+                    <TextField
+                      grow="1"
+                      name="port_range"
+                      value={state.port_range}
+                      disabled={from_file === FROM_FILE}
+                      onChange={onValueChange}
+                      size="30"
+                    />
+                  </Divider>
+                  <Divider>
+                    <Radio
+                      title={_('从文件中选择')}
+                      name="from_file"
+                      value={FROM_FILE}
+                      onChange={onValueChange}
+                      checked={from_file === FROM_FILE}
+                    />
+                    <FileField name="file" onChange={onValueChange} />
+                  </Divider>
+                </Divider>
+              </FormGroup>
+            )}
+            {is_edit && (
+              <Section title={_('端口范围')} extra={newrangeicon}>
+                {isDefined(port_list) && (
+                  <PortRangesTable
+                    portRanges={state.port_ranges}
+                    onDeleteClick={onTmpDeletePortRange}
+                  />
+                )}
+              </Section>
+            )}
+          </Layout>
+        );
+      }}
+    </SaveDialog>
+  );
+};
+
+PortListsDialog.propTypes = {
+  comment: PropTypes.string,
+  from_file: PropTypes.yesno,
+  id: PropTypes.string,
+  name: PropTypes.string,
+  port_list: PropTypes.model,
+  port_range: PropTypes.string,
+  port_ranges: PropTypes.array,
+  title: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onDeletePortRangeClick: PropTypes.func,
+  onNewPortRangeClick: PropTypes.func,
+  onSave: PropTypes.func.isRequired,
+  onTmpDeletePortRange: PropTypes.func.isRequired,
+};
+
+export default PortListsDialog;
+
+// vim: set ts=2 sw=2 tw=80:
