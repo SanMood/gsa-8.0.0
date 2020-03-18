@@ -1,0 +1,120 @@
+/* Copyright (C) 2016-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import styled from 'styled-components';
+
+import _ from 'gmp/locale';
+
+import {isDefined} from 'gmp/utils/identity';
+import {capitalizeFirstLetter} from 'gmp/utils/string';
+
+import PropTypes from 'web/utils/proptypes';
+import Theme from 'web/utils/theme';
+
+import Layout from 'web/components/layout/layout';
+
+import Sort from 'web/components/sortby/sortby';
+
+const TableHead = ({
+  children,
+  className,
+  colSpan,
+  rowSpan,
+  currentSortBy,
+  currentSortDir,
+  sort = true,
+  sortBy,
+  title,
+  width,
+  onSortChange,
+  ...other
+}) => {
+  let sortSymbol;
+  if (isDefined(sortBy) && currentSortBy === sortBy) {
+    if (currentSortDir === Sort.DESC) {
+      sortSymbol = ( // triangle pointing down
+        <span
+          title={_('按{{sortBy}}降序排列', {
+            sortBy: capitalizeFirstLetter(sortBy),
+          })}
+        >
+          &nbsp;&#9660;
+        </span>
+      );
+    } else if (currentSortDir === Sort.ASC) {
+      sortSymbol = ( // triangle pointing up
+        <span
+          title={_('按{{sortBy}}升序排列', {
+            sortBy: capitalizeFirstLetter(sortBy),
+          })}
+        >
+          &nbsp;&#9650;
+        </span>
+      );
+    }
+  }
+  if (isDefined(title)) {
+    children = `${title}`;
+  }
+  return (
+    <th className={className} rowSpan={rowSpan} colSpan={colSpan}>
+      {sort && sortBy && isDefined(onSortChange) ? (
+        <Sort by={sortBy} onClick={onSortChange}>
+          <Layout {...other}>
+            {children}
+            {sortSymbol}
+          </Layout>
+        </Sort>
+      ) : (
+        <Layout {...other}>{children}</Layout>
+      )}
+    </th>
+  );
+};
+
+TableHead.propTypes = {
+  className: PropTypes.string,
+  colSpan: PropTypes.numberString,
+  currentSortBy: PropTypes.string,
+  currentSortDir: PropTypes.string,
+  rowSpan: PropTypes.numberString,
+  sort: PropTypes.bool,
+  sortBy: PropTypes.stringOrFalse,
+  title: PropTypes.toString,
+  width: PropTypes.string,
+  onSortChange: PropTypes.func,
+};
+
+export default styled(TableHead)`
+  background-color: ${Theme.white};
+  color: ${Theme.black};
+  border-top: 1px solid ${Theme.lightGray};
+  font-weight: bold;
+  width: ${props => props.width};
+
+  @media print {
+    color: ${Theme.black};
+    font-size: 1.2em;
+    background-color: none;
+    font-weight: bold;
+  }
+`;
+
+// vim: set ts=2 sw=2 tw=80:
