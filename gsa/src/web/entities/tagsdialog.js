@@ -1,0 +1,127 @@
+/* Copyright (C) 2018-2019 Greenbone Networks GmbH
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+import React from 'react';
+
+import styled from 'styled-components';
+
+import _ from 'gmp/locale';
+
+import {renderSelectItems} from 'web/utils/render';
+
+import PropTypes from 'web/utils/proptypes';
+
+import SaveDialog from 'web/components/dialog/savedialog';
+
+import FormGroup from 'web/components/form/formgroup';
+import Select from 'web/components/form/select';
+
+import NewIcon from 'web/components/icon/newicon';
+
+import Divider from 'web/components/layout/divider';
+import Layout from 'web/components/layout/layout';
+
+const ENTITIES_THRESHOLD = 50000;
+
+const Notification = styled(Layout)`
+  justify-content: center;
+`;
+
+const TagsDialog = ({
+  comment = '',
+  entitiesCount,
+  tagId: id,
+  name,
+  tags,
+  title = _('添加标签'),
+  value = '',
+  onClose,
+  onNewTagClick,
+  onTagChanged,
+  onSave,
+}) => (
+  <SaveDialog
+    buttonTitle="添加标签"
+    title={title}
+    width="650px"
+    values={{
+      comment,
+      id,
+      name,
+      value,
+    }}
+    onClose={onClose}
+    onSave={onSave}
+  >
+    {() => (
+      <Layout flex="column">
+        <FormGroup title={_('选择标签')} titleSize="4">
+          <Divider>
+            <Select
+              menuPosition="adjust"
+              name="name"
+              value={id}
+              width="230px"
+              items={renderSelectItems(tags)}
+              onChange={onTagChanged}
+            />
+            <NewIcon
+              value={'tag'}
+              title={_('创建一个新标签')}
+              onClick={onNewTagClick}
+            />
+          </Divider>
+        </FormGroup>
+        <FormGroup title={_('值')} titleSize="4">
+          {value}
+        </FormGroup>
+        <FormGroup title={_('备注')} titleSize="4">
+          {comment}
+        </FormGroup>
+        {entitiesCount >= ENTITIES_THRESHOLD && (
+          <Notification>
+            {_(
+              '请注意，为 {{count}} 个项目分配标签' +
+                '可能需要几分钟。',
+              {count: entitiesCount},
+            )}
+          </Notification>
+        )}
+      </Layout>
+    )}
+  </SaveDialog>
+);
+
+TagsDialog.propTypes = {
+  comment: PropTypes.string,
+  entitiesCount: PropTypes.number.isRequired,
+  filter: PropTypes.filter,
+  name: PropTypes.string,
+  tagId: PropTypes.id,
+  tags: PropTypes.array,
+  title: PropTypes.string,
+  value: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onNewTagClick: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onTagChanged: PropTypes.func.isRequired,
+};
+
+export default TagsDialog;
+
+// vim: set ts=2 sw=2 tw=80:
