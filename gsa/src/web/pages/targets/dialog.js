@@ -205,7 +205,7 @@ const TargetDialog = ({
               <Divider flex="column">
                 <Divider>
                   <Radio
-                    title={_('手册')}
+                    title={_('手动输入')}
                     name="target_source"
                     disabled={state.in_use}
                     checked={state.target_source === 'manual'}
@@ -258,7 +258,7 @@ const TargetDialog = ({
               <Divider flex="column">
                 <Divider>
                   <Radio
-                    title={_('手册')}
+                    title={_('手动输入')}
                     name="target_exclude_source"
                     disabled={state.in_use}
                     checked={state.target_exclude_source === 'manual'}
