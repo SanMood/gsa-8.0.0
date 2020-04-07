@@ -246,7 +246,7 @@ const MenuBar = ({gmp, capabilities}) => {
                 <MenuEntry title={_('用户')} to="users" />
               )}
               {capabilities.mayAccess('groups') && (
-                <MenuEntry title={_('组s')} to="groups" />
+                <MenuEntry title={_('组')} to="groups" />
               )}
               {capabilities.mayAccess('roles') && (
                 <MenuEntry title={_('角色')} to="roles" />
