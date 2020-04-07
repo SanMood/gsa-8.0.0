@@ -215,7 +215,7 @@ const ToolBarIcons = ({
         <Link
           to="results"
           filter={'task_id=' + entity.id}
-          title={_('R任务 {{- name}}的结果', entity)}
+          title={_('任务 {{- name}}的结果', entity)}
         >
           <Badge content={entity.result_count}>
             <ResultIcon />
@@ -285,7 +285,7 @@ const Details = ({entity, ...props}) => {
           </TableRow>
 
           <TableRow>
-            <TableData>{_('可变的')}</TableData>
+            <TableData>{_('可变项')}</TableData>
             <TableData>{renderYesNo(entity.isAlterable())}</TableData>
           </TableRow>
 
