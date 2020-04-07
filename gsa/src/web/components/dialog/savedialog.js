@@ -120,7 +120,7 @@ class SaveDialogContent extends React.Component {
                   onCloseClick={this.handleErrorClose}
                 />
               )}
-              <ErrorBoundary errElement={_('dialog')}>
+              <ErrorBoundary errElement={_('对话')}>
                 <ScrollableContent {...heightProps}>
                   {children({
                     values: childValues,
@@ -158,7 +158,7 @@ SaveDialogContent.propTypes = {
 };
 
 const SaveDialog = ({
-  buttonTitle = _('Save'),
+  buttonTitle = _('保存'),
   children,
   defaultValues,
   error,
