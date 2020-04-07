@@ -96,7 +96,7 @@ const FilterPart = ({
           onChange={onChange}
         />
       </FormGroup>
-      <FormGroup title={_('凭据过滤器')} titleSize="3">
+      <FormGroup title={_('票据过滤器')} titleSize="3">
         <Select
           name="credentialsFilter"
           value={credentialsFilter}
@@ -142,7 +142,7 @@ const FilterPart = ({
           onChange={onChange}
         />
       </FormGroup>
-      <FormGroup title={_('复写过滤器 ')} titleSize="3">
+      <FormGroup title={_('复写过滤器')} titleSize="3">
         <Select
           name="overridesFilter"
           value={overridesFilter}
@@ -254,7 +254,7 @@ const FilterPart = ({
           onChange={onChange}
         />
       </FormGroup>
-      <FormGroup title={_('CPE过滤器'')} titleSize="3">
+      <FormGroup title={_('CPE过滤器')} titleSize="3">
         <Select
           name="cpeFilter"
           value={cpeFilter}
