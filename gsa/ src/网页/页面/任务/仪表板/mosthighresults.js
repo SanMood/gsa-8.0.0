@@ -135,7 +135,7 @@ TasksMostHighResultsDisplay.displayId = 'task-by-most-high-results';
 export const TasksMostHighResultsTableDisplay = createDisplay({
   loaderComponent: TasksHighResultsLoader,
   displayComponent: DataTableDisplay,
-  dataTitles: [_l('任务名称'), _l('最高x. 每个主机的高危漏洞')],
+  dataTitles: [_l('任务名称'), _l('最高. 每个主机的高危漏洞')],
   dataRow: row => [row.x, row.y],
   dataTransform: transformHighResultsData,
   title: () => _('每个主机具有最高危漏洞结果的任务'),
